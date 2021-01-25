@@ -9,6 +9,42 @@ func routes(_ app: Application) throws {
     app.get("hello") { req -> String in
         return "Hello, world!"
     }
+    
+    app.post("api", "acronyms") { req -> EventLoopFuture<Acronym> in
+        let acronym = try req.content.decode(Acronym.self)
+        return acronym.save(on: req.db).map {
+            acronym
+        }
+    }
+    
+    app.get("api", "acronyms") { req -> EventLoopFuture<[Acronym]> in
+        Acronym.query(on: req.db).all()
+    }
 
-    try app.register(collection: TodoController())
+    app.get("api", "acronyms", ":acronymId")  { req -> EventLoopFuture<Acronym> in
+        Acronym.find(req.parameters.get("acronymId"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+    }
+    
+    app.put("api", "acronyms", ":acronymId") { req -> EventLoopFuture<Acronym> in
+        let updatedAcronym = try req.content.decode(Acronym.self)
+        return Acronym.find(req.parameters.get("acronymId"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { acronym  in
+                acronym.short = updatedAcronym.short
+                acronym.long = updatedAcronym.long
+                return acronym.save(on: req.db).map {
+                    acronym
+                }
+            }
+    }
+    
+    app.delete("api", "acronyms", ":acronymId") { req -> EventLoopFuture<HTTPStatus> in
+        return Acronym.find(req.parameters.get("acronymId"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { acronym in
+                acronym.delete(on: req.db)
+                    .transform(to: .noContent)
+            }
+    }
 }
