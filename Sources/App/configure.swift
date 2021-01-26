@@ -18,6 +18,8 @@ public func configure(_ app: Application) throws {
 
     app.migrations.add(CreateAcronym())
     app.logger.logLevel = .debug
+    // app.http.server.configuration.hostname = "127.0.0.1"
+    // app.http.server.configuration.port = 9090
     try app.autoMigrate().wait()
 
     // register routes
