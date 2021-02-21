@@ -11,7 +11,8 @@ struct CreateAcronym: Migration {
     
     func prepare(on database: Database) -> EventLoopFuture<Void> {
         database.schema("acronyms")
-            .id()
+            ///For custom identifier types, you will need to specify the field manually.
+            .field("id", .int, .identifier(auto: true))
             .field("short", .string, .required)
             .field("long", .string, .required)
             .create()
